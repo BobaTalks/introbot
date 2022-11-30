@@ -1,6 +1,8 @@
 ## README
 How to use introbot! This bot pulls a user's first message from a specified introductions channel.
 
+
+## Usage
 **COMMANDS**  
 **!intro**  
 *Use this command followed by the user's name or handle to pull a user's introduction. 
@@ -12,3 +14,9 @@ You can either mention the user or type their EXACT name as known in the sever.*
 *Use this command if you would like introbot to send a user's introduction to you via Direct Message.* 
 
 Type `!introHelp` for more information on a command. If there are any problems with this bot, please let a moderator know so that they can contact the developer.
+
+
+## Development
+### Environment Variables
+Make a copy of `.env.sample` as `.env`
+Fill in the required variables listed in your new `.env` file.
