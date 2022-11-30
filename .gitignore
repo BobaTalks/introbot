@@ -2,3 +2,4 @@
 /.environment_variables.py
 /old versions
 venv
+.env
