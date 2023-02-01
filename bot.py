@@ -5,8 +5,8 @@ from discord.ext import commands
 
 intents = discord.Intents.all()  # All but the two privileged ones
 intents.members = True  # Subscribe to the Members intent
-bot = commands.Bot(command_prefix='!', intents=intents)
-bot.remove_command('help')
+bot = commands.Bot(command_prefix="!", intents=intents)
+bot.remove_command("help")
 
 # environment variables
 INTRO_CHANNEL_ID = int(os.environ["INTRO_CHANNEL_ID"])
@@ -15,35 +15,49 @@ BOT_TOKEN = os.environ["BOT_TOKEN"]
 
 ONE_MINUTE = 60
 
+
 async def update_intro_list():
     while True:
         global message_list
         intro_channel = guild.get_channel(INTRO_CHANNEL_ID)
-        message_list = [message_list async for message_list in intro_channel.history(limit=4000,oldest_first=True)]
+        message_list = [
+            message_list
+            async for message_list in intro_channel.history(
+                limit=4000, oldest_first=True
+            )
+        ]
         await asyncio.sleep(ONE_MINUTE)
 
-########################### HELPERS ########################### 
+
+########################### HELPERS ###########################
+
 
 def is_intro_channel(ctx):
     intro_channel = bot.get_channel(INTRO_CHANNEL_ID)
     return ctx.channel == intro_channel
 
+
 def is_botadmin(ctx):
     zach_id = 138458225958715392
     return ctx.author.id == zach_id
+
 
 def is_admintea(ctx):
     tea_id = 800778750459379792
     return ctx.author.id == tea_id
 
+
 def make_mention_object_by_id(author_id):
     return "<@{}>".format(author_id)
+
 
 def strip_mention_to_id(target_user):
     return int(target_user.strip("<@").strip(">"))
 
+
 def is_mention(input):
     return input.startswith("<@")
+
 
 async def fileify(avatar_url):
     filename = "avatar.jpg"
@@ -51,44 +65,55 @@ async def fileify(avatar_url):
     file = discord.File(fp=filename)
     return file
 
-async def make_embed(ctx, target_user):
-    username, message, url= await get_intro(target_user)
 
-# adjusted it so that the 1024 character limit is now 4096
-# embed color pulls from user's role color
-# added link to original message
-    embed = discord.Embed(title="**{}**".format(username),description="**Intro**\n{}".format(message),color=target_user.color)
+async def make_embed(ctx, target_user):
+    username, message, url = await get_intro(target_user)
+
+    # adjusted it so that the 1024 character limit is now 4096
+    # embed color pulls from user's role color
+    # added link to original message
+    embed = discord.Embed(
+        title="**{}**".format(username),
+        description="**Intro**\n{}".format(message),
+        color=target_user.color,
+    )
     embed.set_thumbnail(url=target_user.avatar)
-    embed.add_field(name="--", value="[*View original message...*]({})".format(url), inline=False)
+    embed.add_field(
+        name="--", value="[*View original message...*]({})".format(url), inline=False
+    )
     return embed
 
-########################### BOOT ########################### 
+
+########################### BOOT ###########################
+
 
 @bot.event
 async def on_ready():
-    print('Logged in as')
+    print("Logged in as")
     print(bot.user.name)
     print(bot.user.id)
-    print('------')
+    print("------")
     await bot.change_presence(activity=discord.Game(name="!intro [name or mention]"))
 
-    #imagine a world where I didn't have to do this
-    #but this has to work on ready so here we are
+    # imagine a world where I didn't have to do this
+    # but this has to work on ready so here we are
     global guild
     guild = bot.get_guild(GUILD_ID)
 
     bot.loop.create_task(update_intro_list())
 
-########################### HELP ############################## 
-@bot.command(name='introHelp', pass_context=True)
+
+########################### HELP ##############################
+@bot.command(name="introHelp", pass_context=True)
 async def help_info(msg):
     user = msg.author.id
 
     if user == bot.user.id:
         return
 
-    embed = discord.Embed(title='Help',description=
-    """
+    embed = discord.Embed(
+        title="Help",
+        description="""
 Someone asks a question and you'd like some quick insight on their background? Use introbot to help! This bot pulls a user's first message from the introductions channel.
 
 *NOTE: If you would like to change your introduction, you must edit your original message.*
@@ -105,45 +130,54 @@ EXAMPLE 2: `!intro BobaTalks`
 
 Type `!introHelp` for more information on a command. If there are any problems with this bot, please let a moderator know.
     """,
-    color=0xcda971)
+        color=0xCDA971,
+    )
     await msg.send(embed=embed)
 
-    print('help information sent')
+    print("help information sent")
 
-########################### COMMANDS ########################### 
 
-@bot.command(name='intro', pass_context=True)
-async def get_intro(ctx, *,  target_user):
+########################### COMMANDS ###########################
+
+
+@bot.command(name="intro", pass_context=True)
+async def get_intro(ctx, *, target_user):
     if is_intro_channel(ctx):
         return
     else:
         try:
-            #target_user = target_user.encode('utf-8')
+            # target_user = target_user.encode('utf-8')
             print("encoding", target_user)
             if is_mention(target_user):
                 target_user = await guild.fetch_member(strip_mention_to_id(target_user))
                 print("I tried converting user", target_user)
             else:
-                target_user = await string_to_user(target_user) #target user can be a string
+                target_user = await string_to_user(
+                    target_user
+                )  # target user can be a string
             await send_intro(ctx, target_user)
         except Exception as e:
             print(e)
             await ctx.channel.send(content="Could not fetch intro.")
 
-@bot.command(name='dmintro', pass_context=True)
-async def get_intro_dm(ctx, *,  target_user):
-    print("get_intro_dm",target_user)
+
+@bot.command(name="dmintro", pass_context=True)
+async def get_intro_dm(ctx, *, target_user):
+    print("get_intro_dm", target_user)
     try:
         if is_mention(target_user):
             target_user = await guild.fetch_member(strip_mention_to_id(target_user))
             print("I tried converting user for DM", target_user)
         else:
-            target_user = await string_to_user(target_user) #target user can be a string
+            target_user = await string_to_user(
+                target_user
+            )  # target user can be a string
         await send_intro_by_dm(ctx, target_user)
     except Exception as e:
         print(e)
         if is_intro_channel(ctx):
             await ctx.channel.send(content="Could not fetch intro.")
+
 
 async def get_intro(target_user):
     for message in message_list:
@@ -153,16 +187,19 @@ async def get_intro(target_user):
             else:
                 return target_user.name, message.content, message.jump_url
 
+
 async def send_intro_by_dm(ctx, target_user):
-    print("send_intro_dm",target_user)
+    print("send_intro_dm", target_user)
     try:
         embed = await make_embed(ctx, target_user)
         await ctx.author.send(embed=embed)
-    #probably too long for embed
+    # probably too long for embed
     except discord.errors.HTTPException as e:
         print(e)
         username, message, url = await get_intro(target_user)
-        introstring = "**{}**\n---------------------------------------\n".format(username)
+        introstring = "**{}**\n---------------------------------------\n".format(
+            username
+        )
         introstring += "{}\n---------------------------------------".format(message)
         avatar_file = await fileify(target_user.avatar)
         await ctx.author.send(content=introstring, file=avatar_file)
@@ -170,16 +207,19 @@ async def send_intro_by_dm(ctx, target_user):
         print(e)
         await ctx.channel.send("Could not fetch intro.")
 
+
 async def send_intro(ctx, target_user):
-    print("send_intro",target_user)
+    print("send_intro", target_user)
     try:
         embed = await make_embed(ctx, target_user)
         await ctx.channel.send(embed=embed)
-    #probably too long for embed
+    # probably too long for embed
     except discord.errors.HTTPException as e:
         print(e)
         username, message, url = await get_intro(target_user)
-        introstring = "**{}**\n---------------------------------------\n".format(username)
+        introstring = "**{}**\n---------------------------------------\n".format(
+            username
+        )
         introstring += "{}\n---------------------------------------".format(message)
         avatar_file = await fileify(target_user.avatar)
         await ctx.channel.send(content=introstring, file=avatar_file)
@@ -187,45 +227,57 @@ async def send_intro(ctx, target_user):
         print(e)
         await ctx.channel.send("Could not fetch intro.")
 
+
 async def string_to_user(string_to_convert):
     string_to_convert = string_to_convert.lower()
     for member in guild.members:
-        if string_to_convert == str(member.nick).lower() or string_to_convert == str(member.name).lower():
+        if (
+            string_to_convert == str(member.nick).lower()
+            or string_to_convert == str(member.name).lower()
+        ):
             return member
 
-########################### CHANGES ############################## 
-@bot.command(name='changelog', pass_context=True)
+
+########################### CHANGES ##############################
+@bot.command(name="changelog", pass_context=True)
 async def help_info(msg):
     user = msg.author.id
 
     if user == bot.user.id:
         return
 
-    embed = discord.Embed(title='Changelog',color=0xcda971)
-    embed.add_field(name="**introbot (v1.2) - updated 12.1.2022**",
-    value=
-    """
+    embed = discord.Embed(title="Changelog", color=0xCDA971)
+    embed.add_field(
+        name="**introbot (v1.2) - updated 12.1.2022**",
+        value="""
 ➢ Fixed intros not working in forums
 ➢ Fixed intros not working in voice channel chats
 ➢ Fixed bug for intros not updating edits or grabbing new ones from <#1030656443386445864>
 
 Type `!introHelp` for more information on specific commands.
 ...
-    """,inline=False)
-    embed.set_footer(text="If there are any problems with this bot, please let a moderator know.")
+    """,
+        inline=False,
+    )
+    embed.set_footer(
+        text="If there are any problems with this bot, please let a moderator know."
+    )
     await msg.send(embed=embed)
 
-    print('changelog sent')
+    print("changelog sent")
 
-########################### OTHER STUFF ########################### 
+
+########################### OTHER STUFF ###########################
+
 
 @bot.event
 async def on_message(message):
     await bot.process_commands(message)
 
-    #dont talk to urself bruh
+    # dont talk to urself bruh
     if message.author.id == bot.user.id:
         return
 
+
 bot.run(BOT_TOKEN)
-#test
+# test
